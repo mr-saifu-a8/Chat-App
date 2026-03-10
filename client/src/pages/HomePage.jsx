@@ -1,22 +1,3 @@
-// // import React from "react";
-// // import ChatContainer from "../components/ChatContainer";
-// // import Sidebar from "../components/Sidebar";
-// // import RightSidebar from "../components/RightSidebar";
-
-// // const HomePage = () => {
-// //   return (
-// //     <div className="w-full h-screen border sm:px-[15%] sm:py-[5%]">
-// //       <div className="backdrop-blur-xl border-2 border-y-gray-600 rounded-2xl overflow-hidden h-full grid grid-cols-1 relative">
-// //         <Sidebar />
-// //         <ChatContainer />
-// //         <RightSidebar />
-// //       </div>
-// //     </div>
-// //   );
-// // };
-
-// // export default HomePage;
-
 import React, { useState } from "react";
 import ChatContainer from "../components/ChatContainer";
 import Sidebar from "../components/Sidebar";
