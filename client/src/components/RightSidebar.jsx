@@ -1,33 +1,144 @@
-import React from 'react'
-import assets, { imagesDummyData } from '../assets/assets'
+// import React from 'react'
+// import assets, { imagesDummyData } from '../assets/assets'
 
-const RightSidebar = ({selectedUser}) => {
-  return selectedUser && (
-    <div className={`bg-[#8185b2]/10 text-white w-full relative overflow-y-scroll ${selectedUser ? "max-md:hidden" : ""}`}>
-      <div className='pt-16 flex flex-col items-center gap-2 text-sm font-light mx-auto '>
-        <img src={selectedUser?.profilePic || assets.avatar_icon} alt="" className='w-20 aspect-[1/1] rounded-full' />
-        <h1 className='px-10 text-xl font-medium mx-auto flex items-center gap-2'>
-          <p className='w-2 h-2 rounded-full bg-green-500'></p>
-          {selectedUser.fullName}
-        </h1>
-        <p className='px-10 mx-auto'>{selectedUser.bio}</p>
-      </div>
+// const RightSidebar = ({selectedUser}) => {
+//   return selectedUser && (
+//     <div className={`bg-[#8185b2]/10 text-white w-full relative overflow-y-scroll ${selectedUser ? "max-md:hidden" : ""}`}>
+//       <div className='pt-16 flex flex-col items-center gap-2 text-sm font-light mx-auto '>
+//         <img src={selectedUser?.profilePic || assets.avatar_icon} alt="" className='w-20 aspect-[1/1] rounded-full' />
+//         <h1 className='px-10 text-xl font-medium mx-auto flex items-center gap-2'>
+//           <p className='w-2 h-2 rounded-full bg-green-500'></p>
+//           {selectedUser.fullName}
+//         </h1>
+//         <p className='px-10 mx-auto'>{selectedUser.bio}</p>
+//       </div>
 
-      <hr className='bg-[#ffffff50] my-4' />
-      
-      <div className='px-5 text-xs'>
-        <p>Media</p>
-        <div className='mt-2 max-h-full overflow-y-scroll grid grid-cols-2 gap-4 opacity-80'>
-          {imagesDummyData.map((url, index) => (
-            <div key={index} onClick={()=> window.open(url)} className='cursor-pointer rounded'>
-              <img src={url} alt="" className='h-full rounded-md' />
+//       <hr className='bg-[#ffffff50] my-4' />
+
+//       <div className='px-5 text-xs'>
+//         <p>Media</p>
+//         <div className='mt-2 max-h-full overflow-y-scroll grid grid-cols-2 gap-4 opacity-80'>
+//           {imagesDummyData.map((url, index) => (
+//             <div key={index} onClick={()=> window.open(url)} className='cursor-pointer rounded'>
+//               <img src={url} alt="" className='h-full rounded-md' />
+//           </div>
+//         ))}
+//         </div>
+//       </div>
+//       <button className='absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-400 to-violet-600 text-white border-none text-sm font-light p-2 px-20 rounded-full cursor-pointer'>Logout</button>
+//     </div>
+//   )
+// }
+
+// export default RightSidebar
+
+import React, { useState } from "react";
+import assets, { imagesDummyData } from "../assets/assets";
+
+const RightSidebar = ({ selectedUser, onLogout }) => {
+  const [imgError, setImgError] = useState(false);
+
+  if (!selectedUser) return null;
+
+  return (
+    <div className="flex flex-col w-full h-full bg-transparent text-white">
+      {/* Scrollable area */}
+      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        {/* Profile */}
+        <div className="pt-8 pb-6 px-5 flex flex-col items-center gap-3 text-center">
+          <div className="relative">
+            <img
+              src={
+                (!imgError && selectedUser?.profilePic) || assets.avatar_icon
+              }
+              onError={() => setImgError(true)}
+              alt={selectedUser.fullName}
+              className="w-20 h-20 rounded-full object-cover ring-4 ring-white/8 shadow-xl shadow-black/40"
+            />
+            <span className="absolute bottom-1 right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0d0b1e]" />
           </div>
-        ))}
+
+          <div>
+            <h2 className="text-base font-semibold text-white">
+              {selectedUser.fullName}
+            </h2>
+            <p className="text-xs text-emerald-400/80 mt-0.5">Active now</p>
+          </div>
+
+          {selectedUser.bio && (
+            <p className="text-xs text-white/40 leading-relaxed max-w-[180px]">
+              {selectedUser.bio}
+            </p>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="mx-5 border-t border-white/8" />
+
+        {/* Media */}
+        <div className="px-5 pt-5 pb-6">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-white/25">
+              Media
+            </p>
+            <span className="text-[10px] text-white/25">
+              {imagesDummyData.length}
+            </span>
+          </div>
+
+          {imagesDummyData.length > 0 ? (
+            <div className="grid grid-cols-2 gap-1.5">
+              {imagesDummyData.map((url, index) => (
+                <div
+                  key={index}
+                  onClick={() => window.open(url)}
+                  className="group relative aspect-square rounded-lg overflow-hidden cursor-pointer bg-white/5"
+                >
+                  <img
+                    src={url}
+                    alt={`media-${index}`}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                    <svg
+                      className="w-4 h-4 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-white/20 text-xs">
+              No media yet
+            </div>
+          )}
         </div>
       </div>
-      <button className='absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-400 to-violet-600 text-white border-none text-sm font-light p-2 px-20 rounded-full cursor-pointer'>Logout</button>
-    </div>
-  )
-}
 
-export default RightSidebar
+      {/* Logout */}
+      <div className="shrink-0 px-5 py-4 border-t border-white/8">
+        <button
+          onClick={onLogout}
+          className="w-full py-2.5 rounded-xl text-sm font-medium text-white/80
+            bg-white/6 hover:bg-red-500/20 hover:text-red-400
+            border border-white/8 hover:border-red-500/30
+            active:scale-95 transition-all duration-200"
+        >
+          Sign out
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default RightSidebar;
