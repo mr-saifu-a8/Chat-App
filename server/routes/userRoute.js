@@ -6,7 +6,7 @@ const userRouter = express.Router()
 
 userRouter.post("/signup", signup)
 userRouter.post("/login", login)
-userRouter.post("/updated-profile", protectedRoutes, updateProfile)
+userRouter.put("/update-profile", protectedRoutes, updateProfile)
 userRouter.get("/check", protectedRoutes, checkAuth)
 
 export default userRouter
