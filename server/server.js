@@ -20,12 +20,22 @@ console.log("Allowed CORS origins:", allowedOrigins);
 const corsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (e.g. curl, some mobile clients)
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) return callback(null, true);
+
+    // In production we expect CLIENT_URL to be set and match the frontend origin.
+    // If it doesn't, we still allow the request (to avoid CORS blocking the app),
+    // but we log a warning so the deployment can be corrected.
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
 
-    console.warn("Blocked CORS origin:", origin);
-    callback(new Error("Not allowed by CORS"));
+    console.warn(
+      "CORS origin mismatch (incoming):",
+      origin,
+      "allowed:",
+      allowedOrigins,
+    );
+    return callback(null, true);
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
