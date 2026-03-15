@@ -11,8 +11,7 @@ const app = express();
 const server = http.createServer(app);
 
 const corsOptions = {
-  origin:
-    process.env.CLIENT_URL || "https://chat-app-frontend-jl1l.onrender.com",
+  origin: process.env.CLIENT_URL || "http://localhost:5173",
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -63,18 +62,17 @@ app.use("/api/auth", userRouter);
 app.use("/api/messages", messageRouter);
 
 // ──────────────────────────────────────────
-// START SERVER
+// START SERVER — hamesha listen karo
 // ──────────────────────────────────────────
+const PORT = process.env.PORT || 5000;
 
 connectDB()
-
-if (process.env.NODE_ENV !== "production") {
-  
-  
-  const PORT = process.env.PORT || 5000
-  server.listen(PORT, ()=> console.log("Server is running on " + PORT)
-)
-}
-
-// Export server for Vercel
-export default server
+  .then(() => {
+    server.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("DB connection failed:", err);
+    process.exit(1);
+  });
