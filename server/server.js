@@ -12,10 +12,11 @@ const server = http.createServer(app);
 
 // Allow multiple origins (comma-separated) and fall back to localhost for local dev.
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+  .replace(/^\s*"|"\s*$/g, "")
   .split(",")
   .map((o) => o.trim())
   .filter(Boolean);
-
+console.log("Allowed CORS origins:", allowedOrigins);
 const corsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (e.g. curl, some mobile clients)
@@ -76,17 +77,19 @@ app.use("/api/auth", userRouter);
 app.use("/api/messages", messageRouter);
 
 // ──────────────────────────────────────────
-// START SERVER — hamesha listen karo
+// START SERVER — bind port immediately (needed by some hosts like Render)
 // ──────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
 connectDB()
   .then(() => {
-    server.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
+    console.log("Database connected");
   })
   .catch((err) => {
     console.error("DB connection failed:", err);
-    process.exit(1);
+    // Don't exit immediately; keep the server up so hosting platform sees a bound port
   });
