@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import assets, { userDummyData } from "./../assets/assets";
 import { useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
 
 const Sidebar = ({ selectedUser, setSelectedUser }) => {
   const navigate = useNavigate();
@@ -10,6 +12,8 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
   const filteredUsers = userDummyData.filter((user) =>
     user.fullName.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  const {logout} = useContext(AuthContext)
 
   return (
     <div className="flex flex-col w-full h-full bg-transparent text-white">
@@ -45,7 +49,7 @@ const Sidebar = ({ selectedUser, setSelectedUser }) => {
                   </button>
                   <div className="my-1 border-t border-white/8" />
                   <button
-                    onClick={() => setMenuOpen(false)}
+                    onClick={() => logout()}
                     className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-white/8 transition-colors"
                   >
                     Logout

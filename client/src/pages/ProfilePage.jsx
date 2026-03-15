@@ -243,12 +243,10 @@ const ProfilePage = () => {
           <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl px-4 py-3.5 flex items-center gap-3">
             <img
               src={
-                selectedImg
-                  ? URL.createObjectURL(selectedImg)
-                  : assets.avatar_icon
+               authUser?.profilePic || assets.logo_icon
               }
               alt="preview"
-              className="w-9 h-9 rounded-full object-cover shrink-0"
+              className="w-12 h-12 rounded-full object-cover shrink-0"
             />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-white truncate leading-tight">
