@@ -3,8 +3,19 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
-axios.defaults.baseURL = backendUrl;
+// VITE_BACKEND_URL is configured at build time (in .env / Render/Vercel env vars).
+// If it is missing in a deployment, we fall back to a relative API path so the app can work
+// when backend is served from the same origin.
+const backendUrl = (import.meta.env.VITE_BACKEND_URL ?? "")
+  .replace(/(^\"|\"$)/g, "")
+  .trim();
+if (!backendUrl) {
+  console.warn(
+    "VITE_BACKEND_URL is not set. The app will attempt to use a relative API path (same origin).\n" +
+      "For deployments where the backend runs on a different domain, set VITE_BACKEND_URL to the backend URL.",
+  );
+}
+axios.defaults.baseURL = backendUrl || undefined;
 
 export const AuthContext = createContext();
 
@@ -17,7 +28,8 @@ export const AuthProvider = ({ children }) => {
   const connectSocket = (userData) => {
     if (!userData?._id || socket?.connected) return;
 
-    const newSocket = io(backendUrl, {
+    // If backendUrl is empty, socket.io will connect to the current origin.
+    const newSocket = io(backendUrl || undefined, {
       query: { userId: userData._id },
     });
 
@@ -75,6 +87,7 @@ export const AuthProvider = ({ children }) => {
         toast.error(data.message);
       }
     } catch (error) {
+      console.error("Login error:", error);
       toast.error(error.response?.data?.message || error.message);
     }
   };

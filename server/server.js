@@ -10,8 +10,22 @@ import { Server } from "socket.io";
 const app = express();
 const server = http.createServer(app);
 
+// Allow multiple origins (comma-separated) and fall back to localhost for local dev.
+const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:5173")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 const corsOptions = {
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. curl, some mobile clients)
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.warn("Blocked CORS origin:", origin);
+    callback(new Error("Not allowed by CORS"));
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
