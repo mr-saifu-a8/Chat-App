@@ -1,11 +1,35 @@
+import { useState, useEffect, useContext } from "react";
+import { ChatContext } from "../components/ChatContext";
+import { AuthContext } from "../../context/AuthContext";
+import assets from "../assets/assets";
 
-import React, { useState } from "react";
-import assets, { imagesDummyData } from "../assets/assets";
+const RightSidebar = () => {
+  const { selectedUser, messages } = useContext(ChatContext);
+  const { logout, onlineUsers } = useContext(AuthContext);
 
-const RightSidebar = ({ selectedUser, onLogout }) => {
+  const [msgImages, setMsgImages] = useState([]);
   const [imgError, setImgError] = useState(false);
 
+  // Messages se images filter karo
+  useEffect(() => {
+    if (messages?.length > 0) {
+      setMsgImages(messages.filter((msg) => msg.image).map((msg) => msg.image));
+    } else {
+      setMsgImages([]);
+    }
+  }, [messages]);
+
+  // selectedUser change hone pe imgError reset karo
+  useEffect(() => {
+    setImgError(false);
+  }, [selectedUser]);
+
   if (!selectedUser) return null;
+
+  // toString() — ObjectId vs string mismatch fix
+  const isOnline = onlineUsers.some(
+    (id) => id?.toString() === selectedUser._id?.toString(),
+  );
 
   return (
     <div className="flex flex-col w-full h-full bg-transparent text-white">
@@ -22,14 +46,21 @@ const RightSidebar = ({ selectedUser, onLogout }) => {
               alt={selectedUser.fullName}
               className="w-20 h-20 rounded-full object-cover ring-4 ring-white/8 shadow-xl shadow-black/40"
             />
-            <span className="absolute bottom-1 right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0d0b1e]" />
+            {/* Online dot — toString() se sahi check */}
+            {isOnline && (
+              <span className="absolute bottom-1 right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0d0b1e]" />
+            )}
           </div>
 
           <div>
             <h2 className="text-base font-semibold text-white">
               {selectedUser.fullName}
             </h2>
-            <p className="text-xs text-emerald-400/80 mt-0.5">Active now</p>
+            <p
+              className={`text-xs mt-0.5 ${isOnline ? "text-emerald-400/80" : "text-white/30"}`}
+            >
+              {isOnline ? "Active now" : "Offline"}
+            </p>
           </div>
 
           {selectedUser.bio && (
@@ -49,13 +80,13 @@ const RightSidebar = ({ selectedUser, onLogout }) => {
               Media
             </p>
             <span className="text-[10px] text-white/25">
-              {imagesDummyData.length}
+              {msgImages.length}
             </span>
           </div>
 
-          {imagesDummyData.length > 0 ? (
+          {msgImages.length > 0 ? (
             <div className="grid grid-cols-2 gap-1.5">
-              {imagesDummyData.map((url, index) => (
+              {msgImages.map((url, index) => (
                 <div
                   key={index}
                   onClick={() => window.open(url)}
@@ -86,7 +117,7 @@ const RightSidebar = ({ selectedUser, onLogout }) => {
             </div>
           ) : (
             <div className="py-8 text-center text-white/20 text-xs">
-              No media yet
+              No media shared yet
             </div>
           )}
         </div>
@@ -95,7 +126,7 @@ const RightSidebar = ({ selectedUser, onLogout }) => {
       {/* Logout */}
       <div className="shrink-0 px-5 py-4 border-t border-white/8">
         <button
-          onClick={onLogout}
+          onClick={logout}
           className="w-full py-2.5 rounded-xl text-sm font-medium text-white/80
             bg-white/6 hover:bg-red-500/20 hover:text-red-400
             border border-white/8 hover:border-red-500/30

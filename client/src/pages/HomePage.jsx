@@ -1,13 +1,13 @@
-
 import React, { useState } from "react";
 import ChatContainer from "../components/ChatContainer";
 import Sidebar from "../components/Sidebar";
 import RightSidebar from "../components/RightSidebar";
 import bgImage from "../assets/bgImage.svg";
+import { useContext } from "react";
+import { ChatContext } from "../components/ChatContext";
 
 const HomePage = () => {
-  const [selectedUser, setSelectedUser] = useState(null);
-
+ const {selectedUser} = useContext(ChatContext)
   return (
     <div
       className="w-screen h-screen flex items-center justify-center"
@@ -41,7 +41,7 @@ const HomePage = () => {
           }
         `}
         >
-          <Sidebar/>
+          <Sidebar />
         </div>
 
         {/* CHAT CONTAINER — always rendered */}
@@ -52,18 +52,13 @@ const HomePage = () => {
           ${selectedUser ? "flex" : "hidden md:flex"}
         `}
         >
-          <ChatContainer
-           
-          />
+          <ChatContainer />
         </div>
 
         {/* RIGHT SIDEBAR — only when user selected, desktop only */}
         {selectedUser && (
           <div className="hidden lg:flex h-full w-[260px] xl:w-[300px] shrink-0 border-l border-white/8">
-            <RightSidebar
-              selectedUser={selectedUser}
-              setSelectedUser={setSelectedUser}
-            />
+            <RightSidebar />
           </div>
         )}
       </div>
