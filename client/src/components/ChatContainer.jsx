@@ -5,6 +5,7 @@
 // import { AuthContext } from "../../context/AuthContext";
 // import MessageStatus from "./MessageStatus";
 // import MessageMenu from "./MessageMenu";
+// import EmojiReaction from "./EmojiReaction";
 // import toast from "react-hot-toast";
 
 // const ChatContainer = () => {
@@ -16,6 +17,7 @@
 //     getMessages,
 //     isTyping,
 //     deleteMessage,
+//     reactToMessage,
 //   } = useContext(ChatContext);
 //   const { authUser, onlineUsers, socket } = useContext(AuthContext);
 
@@ -209,25 +211,41 @@
 //               key={msg._id || index}
 //               className={`flex items-end gap-2 group ${isMine ? "justify-end" : "justify-start"}`}
 //             >
+//               {/* Other user avatar */}
 //               {!isMine && (
 //                 <img
 //                   src={selectedUser?.profilePic || assets.avatar_icon}
 //                   alt=""
-//                   className="w-6 h-6 rounded-full object-cover shrink-0 mb-5"
+//                   className="w-6 h-6 rounded-full object-cover shrink-0 mb-1"
 //                 />
 //               )}
 
-//               {/* MessageMenu message bubble ko wrap karta hai */}
-//               <div className={`max-w-[72%] md:max-w-[58%]`}>
+//               <div
+//                 className={`max-w-[72%] z-50 md:max-w-[58%] flex items-end gap-1.5 ${isMine ? "flex-row" : "flex-row-reverse"}`}
+//               >
+//                 {/* Emoji button — opposite side pe */}
+//                 <div className="shrink-0 mb-6">
+//                   <EmojiReaction
+//                     messageId={msg._id}
+//                     isMine={isMine}
+//                     currentReactions={msg.reactions || []}
+//                     authUserId={authUser._id}
+//                     onReact={reactToMessage}
+//                     showButtonOnly={true}
+//                   />
+//                 </div>
+
+//                 {/* Message bubble + reactions + time */}
 //                 <MessageMenu
 //                   messageId={msg._id}
 //                   isMine={isMine}
 //                   onDelete={deleteMessage}
-//                   onSelect={(id) => console.log("Selected message:", id)}
+//                   onSelect={(id) => console.log("Selected:", id)}
 //                 >
 //                   <div
-//                     className={`flex flex-col gap-1 ${isMine ? "items-end" : "items-start"}`}
+//                     className={`flex flex-col gap-0.5 ${isMine ? "items-end" : "items-start"}`}
 //                   >
+//                     {/* Bubble */}
 //                     {msg.image ? (
 //                       <img
 //                         src={msg.image}
@@ -245,7 +263,21 @@
 //                         {msg.text}
 //                       </div>
 //                     )}
-//                     <div className="flex items-center gap-1 px-1">
+
+//                     {/* Reaction bubbles — message ke neeche */}
+//                     {msg.reactions?.length > 0 && (
+//                       <EmojiReaction
+//                         messageId={msg._id}
+//                         isMine={isMine}
+//                         currentReactions={msg.reactions || []}
+//                         authUserId={authUser._id}
+//                         onReact={reactToMessage}
+//                         showReactionsOnly={true}
+//                       />
+//                     )}
+
+//                     {/* Time + Status */}
+//                     <div className="flex items-center gap-1 px-1 mt-0.5">
 //                       <p className="text-[10px] text-white/25">
 //                         {formatMassageTime(msg.createdAt)}
 //                       </p>
@@ -257,17 +289,18 @@
 //                 </MessageMenu>
 //               </div>
 
+//               {/* My avatar */}
 //               {isMine && (
 //                 <img
 //                   src={authUser?.profilePic || assets.avatar_icon}
 //                   alt=""
-//                   className="w-6 h-6 rounded-full object-cover shrink-0 mb-5"
+//                   className="w-6 h-6 rounded-full object-cover shrink-0 mb-1"
 //                 />
 //               )}
 //             </div>
 //           );
 //         })}
-        
+
 //         {/* Typing indicator */}
 //         {isTyping && (
 //           <div className="flex items-end gap-2 justify-start">
@@ -356,13 +389,6 @@
 
 // export default ChatContainer;
 
-
-
-
-
-
-
-
 import React, { useEffect, useRef, useState, useContext } from "react";
 import assets from "../assets/assets";
 import { formatMassageTime } from "../library/utils";
@@ -448,6 +474,7 @@ const ChatContainer = () => {
     handleSendImage(e);
   };
 
+  // Empty state
   if (!selectedUser) {
     return (
       <div className="flex-1 hidden md:flex flex-col items-center justify-center gap-4 bg-transparent">
@@ -474,10 +501,35 @@ const ChatContainer = () => {
     (id) => id?.toString() === selectedUser._id?.toString(),
   );
 
+  // Date separator helper
+  const getDateLabel = (dateStr) => {
+    const date = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return "Today";
+    if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  // Group messages by date
+  const groupedMessages = messages.reduce((acc, msg) => {
+    const label = getDateLabel(msg.createdAt);
+    if (!acc[label]) acc[label] = [];
+    acc[label].push(msg);
+    return acc;
+  }, {});
+
   return (
-    <div className="flex-1 flex flex-col h-full min-w-0 bg-transparent">
-      {/* Header */}
-      <div className="shrink-0 flex items-center gap-3 px-4 py-3.5 border-b border-white/8">
+    <div className="flex-1 flex flex-col h-full min-w-0">
+      {/* ── Header ── */}
+      <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-white/[0.06] bg-white/[0.02]">
+        {/* Back — mobile */}
         <button
           onClick={() => setSelectedUser(null)}
           className="md:hidden p-1.5 -ml-1 rounded-lg hover:bg-white/8 transition-colors"
@@ -485,19 +537,21 @@ const ChatContainer = () => {
           <img src={assets.arrow_icon} alt="back" className="w-5 h-5" />
         </button>
 
+        {/* Avatar */}
         <div className="relative shrink-0">
           <img
             src={selectedUser?.profilePic || assets.avatar_icon}
             alt={selectedUser.fullName}
-            className="w-9 h-9 rounded-full object-cover"
+            className="w-9 h-9 rounded-full object-cover ring-2 ring-white/10"
           />
           {isSelectedUserOnline && (
             <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#0d0b1e]" />
           )}
         </div>
 
+        {/* Name + status */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white truncate">
+          <p className="text-sm font-semibold text-white truncate leading-tight">
             {selectedUser.fullName}
           </p>
           {isTyping ? (
@@ -506,21 +560,22 @@ const ChatContainer = () => {
             </p>
           ) : (
             <p
-              className={`text-xs ${isSelectedUserOnline ? "text-emerald-400/80" : "text-white/30"}`}
+              className={`text-xs ${isSelectedUserOnline ? "text-emerald-400/70" : "text-white/25"}`}
             >
               {isSelectedUserOnline ? "Online" : "Offline"}
             </p>
           )}
         </div>
 
-        <div className="flex items-center gap-1">
+        {/* Actions */}
+        <div className="flex items-center gap-0.5">
           <button
             onClick={() => {}}
             title="Audio Call"
             className="p-2 rounded-xl hover:bg-white/8 active:scale-95 transition-all duration-150 group"
           >
             <svg
-              className="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"
+              className="w-[18px] h-[18px] text-white/40 group-hover:text-white/70 transition-colors"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -540,7 +595,7 @@ const ChatContainer = () => {
             className="p-2 rounded-xl hover:bg-white/8 active:scale-95 transition-all duration-150 group"
           >
             <svg
-              className="w-[18px] h-[18px] text-white/50 group-hover:text-white/80 transition-colors"
+              className="w-[18px] h-[18px] text-white/40 group-hover:text-white/70 transition-colors"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -560,125 +615,144 @@ const ChatContainer = () => {
             <img
               src={assets.help_icon}
               alt="help"
-              className="w-4 h-4 opacity-40 group-hover:opacity-70 transition-opacity"
+              className="w-4 h-4 opacity-30 group-hover:opacity-60 transition-opacity"
             />
           </button>
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-5 space-y-3 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-        {messages.map((msg, index) => {
-          const isMine = msg.senderId?.toString() === authUser._id?.toString();
+      {/* ── Messages ── */}
+      <div className="flex-1 overflow-y-auto  scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+        {Object.entries(groupedMessages).map(([dateLabel, msgs]) => (
+          <div key={dateLabel}>
+            {/* Date separator */}
+            <div className="flex items-center gap-3 my-4">
+              <div className="flex-1 h-px bg-white/[0.06]" />
+              <span className="text-[10px] text-white/25 font-medium px-2 py-1 rounded-full bg-white/[0.04] border border-white/[0.06]">
+                {dateLabel}
+              </span>
+              <div className="flex-1 h-px bg-white/[0.06]" />
+            </div>
 
-          return (
-            <div
-              key={msg._id || index}
-              className={`flex items-end gap-2 group ${isMine ? "justify-end" : "justify-start"}`}
-            >
-              {/* Other user avatar */}
-              {!isMine && (
-                <img
-                  src={selectedUser?.profilePic || assets.avatar_icon}
-                  alt=""
-                  className="w-6 h-6 rounded-full object-cover shrink-0 mb-1"
-                />
-              )}
+            {/* Messages in this group */}
+            <div className="space-y-1">
+              {msgs.map((msg, index) => {
+                const isMine =
+                  msg.senderId?.toString() === authUser._id?.toString();
+                const prevMsg = msgs[index - 1];
+                const nextMsg = msgs[index + 1];
 
-              <div
-                className={`max-w-[72%] z-50 md:max-w-[58%] flex items-end gap-1.5 ${isMine ? "flex-row" : "flex-row-reverse"}`}
-              >
-                {/* Emoji button — opposite side pe */}
-                <div className="shrink-0 mb-6">
-                  <EmojiReaction
-                    messageId={msg._id}
-                    isMine={isMine}
-                    currentReactions={msg.reactions || []}
-                    authUserId={authUser._id}
-                    onReact={reactToMessage}
-                    showButtonOnly={true}
-                  />
-                </div>
+                // Same sender ke consecutive messages group karo
+                const isFirst =
+                  !prevMsg ||
+                  prevMsg.senderId?.toString() !== msg.senderId?.toString();
+                const isLast =
+                  !nextMsg ||
+                  nextMsg.senderId?.toString() !== msg.senderId?.toString();
 
-                {/* Message bubble + reactions + time */}
-                <MessageMenu
-                  messageId={msg._id}
-                  isMine={isMine}
-                  onDelete={deleteMessage}
-                  onSelect={(id) => console.log("Selected:", id)}
-                >
+                return (
                   <div
-                    className={`flex flex-col gap-0.5 ${isMine ? "items-end" : "items-start"}`}
+                    key={msg._id || index}
+                    className={`flex items-end group ${isMine ? "justify-end" : "justify-start"} ${isLast ? "mb-3" : "mb-0.5"}`}
                   >
-                    {/* Bubble */}
-                    {msg.image ? (
-                      <img
-                        src={msg.image}
-                        alt="shared"
-                        className="max-w-full rounded-2xl border border-white/10 cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => window.open(msg.image)}
-                      />
-                    ) : (
-                      <div
-                        className={`
-                px-4 py-2.5 rounded-2xl text-sm leading-relaxed text-white break-words
-                ${isMine ? "bg-violet-600/75 rounded-br-sm" : "bg-white/10 rounded-bl-sm"}
-              `}
-                      >
-                        {msg.text}
+                    <div
+                      className={`flex items-end gap-2 max-w-[88%] md:max-w-[80%] ${isMine ? "flex-row" : "flex-row-reverse"}`}
+                    >
+                      {/* Emoji reaction button — opposite side */}
+                      <div className="shrink-0 self-end mb-1">
+                        <EmojiReaction
+                          messageId={msg._id}
+                          isMine={isMine}
+                          currentReactions={msg.reactions || []}
+                          authUserId={authUser._id}
+                          onReact={reactToMessage}
+                          showButtonOnly={true}
+                        />
                       </div>
-                    )}
 
-                    {/* Reaction bubbles — message ke neeche */}
-                    {msg.reactions?.length > 0 && (
-                      <EmojiReaction
+                      {/* Bubble */}
+                      <MessageMenu
                         messageId={msg._id}
                         isMine={isMine}
-                        currentReactions={msg.reactions || []}
-                        authUserId={authUser._id}
-                        onReact={reactToMessage}
-                        showReactionsOnly={true}
-                      />
-                    )}
+                        onDelete={deleteMessage}
+                        onSelect={(id) => console.log("Selected:", id)}
+                      >
+                        <div
+                          className={`flex flex-col ${isMine ? "items-end" : "items-start"}`}
+                        >
+                          {msg.image ? (
+                            <img
+                              src={msg.image}
+                              alt="shared"
+                              className={`
+                                max-w-full cursor-pointer
+                                hover:opacity-90 transition-opacity
+                                ${isFirst && !isMine ? "rounded-tl-2xl" : "rounded-tl-2xl"}
+                                ${isFirst && isMine ? "rounded-tr-2xl" : "rounded-tr-2xl"}
+                                ${isLast && !isMine ? "rounded-bl-sm rounded-br-2xl" : ""}
+                                ${isLast && isMine ? "rounded-br-sm rounded-bl-2xl" : ""}
+                                rounded-2xl border border-white/10
+                              `}
+                              onClick={() => window.open(msg.image)}
+                            />
+                          ) : (
+                            <div
+                              className={`
+                              px-3.5 py-2 text-sm leading-relaxed text-white break-words
+                              ${
+                                isMine
+                                  ? `bg-violet-600/80 ${isFirst ? "rounded-t-2xl" : "rounded-t-lg"} ${isLast ? "rounded-bl-2xl rounded-br-sm" : "rounded-b-lg"}`
+                                  : `bg-white/[0.09] ${isFirst ? "rounded-t-2xl" : "rounded-t-lg"} ${isLast ? "rounded-br-2xl rounded-bl-sm" : "rounded-b-lg"}`
+                              }
+                            `}
+                            >
+                              {msg.text}
+                            </div>
+                          )}
 
-                    {/* Time + Status */}
-                    <div className="flex items-center gap-1 px-1 mt-0.5">
-                      <p className="text-[10px] text-white/25">
-                        {formatMassageTime(msg.createdAt)}
-                      </p>
-                      {isMine && (
-                        <MessageStatus status={msg.status || "sent"} />
-                      )}
+                          {/* Reactions */}
+                          {msg.reactions?.length > 0 && (
+                            <EmojiReaction
+                              messageId={msg._id}
+                              isMine={isMine}
+                              currentReactions={msg.reactions || []}
+                              authUserId={authUser._id}
+                              onReact={reactToMessage}
+                              showReactionsOnly={true}
+                            />
+                          )}
+
+                          {/* Time + status — sirf last message pe */}
+                          {isLast && (
+                            <div
+                              className={`flex items-center gap-1 mt-1 px-0.5 ${isMine ? "flex-row-reverse" : "flex-row"}`}
+                            >
+                              <p className="text-[10px] text-white/20">
+                                {formatMassageTime(msg.createdAt)}
+                              </p>
+                              {isMine && (
+                                <MessageStatus status={msg.status || "sent"} />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </MessageMenu>
                     </div>
                   </div>
-                </MessageMenu>
-              </div>
-
-              {/* My avatar */}
-              {isMine && (
-                <img
-                  src={authUser?.profilePic || assets.avatar_icon}
-                  alt=""
-                  className="w-6 h-6 rounded-full object-cover shrink-0 mb-1"
-                />
-              )}
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+        ))}
 
         {/* Typing indicator */}
         {isTyping && (
-          <div className="flex items-end gap-2 justify-start">
-            <img
-              src={selectedUser?.profilePic || assets.avatar_icon}
-              alt=""
-              className="w-6 h-6 rounded-full object-cover shrink-0"
-            />
-            <div className="bg-white/10 rounded-2xl rounded-bl-sm px-4 py-3">
+          <div className="flex items-end gap-2 justify-start mt-2">
+            <div className="bg-white/[0.09] rounded-2xl rounded-bl-sm px-4 py-3">
               <div className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-bounce [animation-delay:0ms]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-bounce [animation-delay:150ms]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-white/60 animate-bounce [animation-delay:300ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white/50 animate-bounce [animation-delay:0ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white/50 animate-bounce [animation-delay:150ms]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white/50 animate-bounce [animation-delay:300ms]" />
               </div>
             </div>
           </div>
@@ -687,14 +761,14 @@ const ChatContainer = () => {
         <div ref={scrollEnd} />
       </div>
 
-      {/* Image preview */}
+      {/* ── Image preview ── */}
       {previewImage && (
         <div className="shrink-0 px-4 pb-2">
           <div className="relative inline-block">
             <img
               src={previewImage}
               alt="preview"
-              className="h-14 w-14 rounded-lg object-cover border border-white/15"
+              className="h-14 w-14 rounded-xl object-cover border border-white/15"
             />
             <button
               onClick={() => setPreviewImage(null)}
@@ -706,10 +780,30 @@ const ChatContainer = () => {
         </div>
       )}
 
-      {/* Input bar */}
-      <div className="shrink-0 px-4 py-3 border-t border-white/8">
-        <div className="flex items-center gap-2.5">
-          <div className="flex-1 flex items-center gap-2 bg-white/6 border border-white/8 rounded-xl px-4 py-2.5 min-w-0">
+      {/* ── Input bar ── */}
+      <div className="shrink-0 px-4 py-3 border-t border-white/[0.06] bg-white/[0.02]">
+        <div className="flex items-center gap-2">
+          {/* File input */}
+          <input
+            onChange={handleImagePreview}
+            type="file"
+            id="image"
+            accept="image/png,image/jpg,image/jpeg"
+            hidden
+          />
+          <label
+            htmlFor="image"
+            className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center bg-white/[0.06] border border-white/[0.08] hover:bg-white/10 cursor-pointer transition-colors"
+          >
+            <img
+              src={assets.gallery_icon}
+              className="w-4 h-4 opacity-50"
+              alt="gallery"
+            />
+          </label>
+
+          {/* Text input */}
+          <div className="flex-1 flex items-center bg-white/[0.06] border border-white/[0.08] rounded-2xl px-4 py-2.5 min-w-0 focus-within:border-violet-500/40 transition-colors">
             <input
               type="text"
               value={input}
@@ -717,32 +811,16 @@ const ChatContainer = () => {
               onKeyDown={(e) =>
                 e.key === "Enter" && !e.shiftKey ? handleSendMessage(e) : null
               }
-              placeholder="Write a message..."
-              className="flex-1 bg-transparent outline-none text-white text-sm placeholder-white/30 min-w-0"
+              placeholder="Message..."
+              className="flex-1 bg-transparent outline-none text-white text-sm placeholder-white/20 min-w-0"
             />
-            <input
-              onChange={handleImagePreview}
-              type="file"
-              id="image"
-              accept="image/png,image/jpg,image/jpeg"
-              hidden
-            />
-            <label
-              htmlFor="image"
-              className="shrink-0 cursor-pointer p-1 rounded-lg hover:bg-white/10 transition-colors"
-            >
-              <img
-                src={assets.gallery_icon}
-                className="w-4 h-4 opacity-40 hover:opacity-80 transition-opacity"
-                alt="gallery"
-              />
-            </label>
           </div>
 
+          {/* Send button */}
           <button
             onClick={handleSendMessage}
             disabled={!input.trim() && !previewImage}
-            className="shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-25 disabled:cursor-not-allowed active:scale-95 transition-all duration-150"
+            className="shrink-0 w-9 h-9 flex items-center justify-center rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-25 disabled:cursor-not-allowed active:scale-95 transition-all duration-150"
           >
             <img src={assets.send_button} alt="send" className="w-4 h-4" />
           </button>
@@ -753,4 +831,3 @@ const ChatContainer = () => {
 };
 
 export default ChatContainer;
-
