@@ -217,48 +217,44 @@ const ChatContainer = () => {
                 />
               )}
 
-              <div
-                className={`flex items-end gap-1.5 max-w-[72%] md:max-w-[58%] ${isMine ? "flex-row-reverse" : "flex-row"}`}
-              >
-                {/* Message menu — hover pe dikhega */}
-                <div className="shrink-0 mb-5">
-                  <MessageMenu
-                    messageId={msg._id}
-                    isMine={isMine}
-                    onDelete={deleteMessage}
-                    messageText={msg.text || null}
-                  />
-                </div>
-
-                <div
-                  className={`flex flex-col gap-1 ${isMine ? "items-end" : "items-start"}`}
+              {/* MessageMenu message bubble ko wrap karta hai */}
+              <div className={`max-w-[72%] md:max-w-[58%]`}>
+                <MessageMenu
+                  messageId={msg._id}
+                  isMine={isMine}
+                  onDelete={deleteMessage}
+                  onSelect={(id) => console.log("Selected message:", id)}
                 >
-                  {msg.image ? (
-                    <img
-                      src={msg.image}
-                      alt="shared"
-                      className="max-w-full rounded-2xl border border-white/10 cursor-pointer hover:opacity-90 transition-opacity"
-                      onClick={() => window.open(msg.image)}
-                    />
-                  ) : (
-                    <div
-                      className={`
-                      px-4 py-2.5 rounded-2xl text-sm leading-relaxed text-white break-words
-                      ${isMine ? "bg-violet-600/75 rounded-br-sm" : "bg-white/10 rounded-bl-sm"}
-                    `}
-                    >
-                      {msg.text}
+                  <div
+                    className={`flex flex-col gap-1 ${isMine ? "items-end" : "items-start"}`}
+                  >
+                    {msg.image ? (
+                      <img
+                        src={msg.image}
+                        alt="shared"
+                        className="max-w-full rounded-2xl border border-white/10 cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => window.open(msg.image)}
+                      />
+                    ) : (
+                      <div
+                        className={`
+                px-4 py-2.5 rounded-2xl text-sm leading-relaxed text-white break-words
+                ${isMine ? "bg-violet-600/75 rounded-br-sm" : "bg-white/10 rounded-bl-sm"}
+              `}
+                      >
+                        {msg.text}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1 px-1">
+                      <p className="text-[10px] text-white/25">
+                        {formatMassageTime(msg.createdAt)}
+                      </p>
+                      {isMine && (
+                        <MessageStatus status={msg.status || "sent"} />
+                      )}
                     </div>
-                  )}
-
-                  {/* Time + Status */}
-                  <div className="flex items-center gap-1 px-1">
-                    <p className="text-[10px] text-white/25">
-                      {formatMassageTime(msg.createdAt)}
-                    </p>
-                    {isMine && <MessageStatus status={msg.status || "sent"} />}
                   </div>
-                </div>
+                </MessageMenu>
               </div>
 
               {isMine && (
@@ -271,7 +267,7 @@ const ChatContainer = () => {
             </div>
           );
         })}
-
+        
         {/* Typing indicator */}
         {isTyping && (
           <div className="flex items-end gap-2 justify-start">
