@@ -585,7 +585,22 @@ const ChatContainer = () => {
                 />
               )}
 
-              <div className={`max-w-[72%] md:max-w-[58%]`}>
+              <div
+                className={`max-w-[72%] z-50 md:max-w-[58%] flex items-end gap-1.5 ${isMine ? "flex-row" : "flex-row-reverse"}`}
+              >
+                {/* Emoji button — opposite side pe */}
+                <div className="shrink-0 mb-6">
+                  <EmojiReaction
+                    messageId={msg._id}
+                    isMine={isMine}
+                    currentReactions={msg.reactions || []}
+                    authUserId={authUser._id}
+                    onReact={reactToMessage}
+                    showButtonOnly={true}
+                  />
+                </div>
+
+                {/* Message bubble + reactions + time */}
                 <MessageMenu
                   messageId={msg._id}
                   isMine={isMine}
@@ -595,7 +610,7 @@ const ChatContainer = () => {
                   <div
                     className={`flex flex-col gap-0.5 ${isMine ? "items-end" : "items-start"}`}
                   >
-                    {/* Message bubble */}
+                    {/* Bubble */}
                     {msg.image ? (
                       <img
                         src={msg.image}
@@ -606,26 +621,25 @@ const ChatContainer = () => {
                     ) : (
                       <div
                         className={`
-                        px-4 py-2.5 rounded-2xl text-sm leading-relaxed text-white break-words
-                        ${isMine ? "bg-violet-600/75 rounded-br-sm" : "bg-white/10 rounded-bl-sm"}
-                      `}
+                px-4 py-2.5 rounded-2xl text-sm leading-relaxed text-white break-words
+                ${isMine ? "bg-violet-600/75 rounded-br-sm" : "bg-white/10 rounded-bl-sm"}
+              `}
                       >
                         {msg.text}
                       </div>
                     )}
 
-                    {/* Reactions display + emoji button */}
-                    <div
-                      className={`flex items-center gap-1.5 ${isMine ? "flex-row-reverse" : "flex-row"}`}
-                    >
+                    {/* Reaction bubbles — message ke neeche */}
+                    {msg.reactions?.length > 0 && (
                       <EmojiReaction
                         messageId={msg._id}
                         isMine={isMine}
                         currentReactions={msg.reactions || []}
                         authUserId={authUser._id}
                         onReact={reactToMessage}
+                        showReactionsOnly={true}
                       />
-                    </div>
+                    )}
 
                     {/* Time + Status */}
                     <div className="flex items-center gap-1 px-1 mt-0.5">
