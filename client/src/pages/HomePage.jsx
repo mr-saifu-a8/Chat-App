@@ -4,7 +4,7 @@ import Sidebar from "../components/Sidebar";
 import RightSidebar from "../components/RightSidebar";
 import bgImage from "../assets/bgImage.svg";
 import { useContext } from "react";
-import { ChatContext } from "../components/ChatContext";
+import { ChatContext } from "../../context/ChatContext";
 
 const HomePage = () => {
  const {selectedUser} = useContext(ChatContext)

@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { ChatContext } from "../components/ChatContext";
+import { ChatContext } from "../../context/ChatContext";
 import { AuthContext } from "../../context/AuthContext";
 import assets from "../assets/assets";
 
