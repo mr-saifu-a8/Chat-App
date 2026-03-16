@@ -1,108 +1,3 @@
-// import Message from "../models/Message.js"
-// import User from "../models/User.js";
-// import cloudinary from "../lib/cloudinary.js";
-// import { io, userSocketMap } from "../server.js";
-
-// export const getUserForSidebar = async (req, res) => {
-//   try {
-//     const userId = req.user._id;
-//     const filteredUser = await User.find({ _id: { $ne: userId } }).select(
-//       "-password",
-//     );
-
-//     // Count number of message not seen
-//     const unseenMessage = {};
-//     const promises = filteredUser.map(async (user) => {
-//       const messages = await Message.find({
-//         senderId: user._id,
-//         receiverId: userId,
-//         seen: false,
-//       });
-
-//       if (messages.length > 0) {
-//         unseenMessage[user._id] = messages.length;
-//       }
-//     });
-//     await Promise.all(promises);
-//     res.json({ success: true, users: filteredUser, unseenMessage });
-//   } catch (error) {
-//     console.log(error.message);
-//     res.json({ success: false, message: error.message });
-//   }
-// };
-
-// // Get all message for selected user
-
-// export const getMessage = async (req, res) => {
-//   try {
-//     const { id: selectedUserId } = req.params
-//     const myId = req.user._id
-
-//     const message = await Message.find({
-//       $or: [
-//         { senderId: myId, receiverId, selectedUserId },
-//         {senderId: selectedUserId, receiverId: myId}
-//       ]
-//     })
-
-//     await Message.updateMany({ senderId: selectedUserId, receiverId: myId })
-//     {seen: true}
-//     res.json({success: true, message})
-//   } catch (error) {
-//     console.log(error.message);
-//     res.json({ success: false, message: error.message });
-//   }
-// };
-
-// // api to mark message as seen using message id
-
-// export const markMessageAsSeen = async (req, res) => {
-//   try {
-//     const { id } = req.params
-//     await Message.findByIdAndUpdate(id, { seen: true })
-//     res.json({success: true})
-//   } catch (error) {
-//         console.log(error.message);
-//     res.json({ success: false, message: error.message });
-//   }
-// }
-
-// // send message to selected user
-
-// export const sendMessage = async (req, res) => {
-//   try {
-//     const { text, image } = req.body
-//     const receiverId = req.params.id
-//     const senderId = req.user._id
-
-//     let imageUrl;
-//     if (image) {
-//       const uploadResponse = await cloudinary.uploader.upload(image)
-//       imageUrl = uploadResponse.secure_url
-//     }
-
-//     const newMessage = await Message.create({
-//       senderId,
-//       receiverId,
-//       text,
-//       image: imageUrl
-//     })
-
-//     //Emit the new message to the receiver's socket
-//     const receiverSocketId = userSocketMap[receiverId]
-//     if (receiverSocketId) {
-//       io.to(receiverSocketId).emit("newMessage", newMessage)
-//     }
-
-//     res.json({success: true, newMessage})
-
-//   } catch (error) {
-//         console.log(error.message);
-//         res.json({ success: false, message: error.message });
-
-//   }
-// }
-
 import Message from "../models/Message.js";
 import User from "../models/User.js";
 import cloudinary from "../lib/cloudinary.js";
@@ -119,7 +14,6 @@ export const getUserForSidebar = async (req, res) => {
       "-password",
     );
 
-    // Har user ke unseen messages count karo
     const unseenMessages = {};
     const promises = filteredUsers.map(async (user) => {
       const count = await Message.countDocuments({
@@ -141,7 +35,7 @@ export const getUserForSidebar = async (req, res) => {
 };
 
 // ──────────────────────────────────────────
-// GET MESSAGES FOR SELECTED USER
+// GET MESSAGES
 // ──────────────────────────────────────────
 export const getMessage = async (req, res) => {
   try {
@@ -150,16 +44,26 @@ export const getMessage = async (req, res) => {
 
     const messages = await Message.find({
       $or: [
-        { senderId: myId, receiverId: selectedUserId }, // receiverId fix — comma tha
+        { senderId: myId, receiverId: selectedUserId },
         { senderId: selectedUserId, receiverId: myId },
       ],
-    }).sort({ createdAt: 1 }); // Purane messages pehle
+      deletedForEveryone: false,
+      deletedFor: { $ne: myId },
+    }).sort({ createdAt: 1 });
 
-    // Seen update karo — curly braces bahar thi, isiliye kaam nahi kar raha tha
     await Message.updateMany(
-      { senderId: selectedUserId, receiverId: myId, seen: false },
-      { seen: true },
+      { senderId: selectedUserId, receiverId: myId, status: { $ne: "seen" } },
+      { status: "seen" },
     );
+
+    const senderSocketId = userSocketMap[selectedUserId.toString()];
+    if (senderSocketId) {
+      messages
+        .filter((msg) => msg.senderId.toString() === selectedUserId.toString())
+        .forEach((msg) => {
+          io.to(senderSocketId).emit("messageSeen", { messageId: msg._id });
+        });
+    }
 
     res.status(200).json({ success: true, messages });
   } catch (error) {
@@ -174,7 +78,24 @@ export const getMessage = async (req, res) => {
 export const markMessageAsSeen = async (req, res) => {
   try {
     const { id } = req.params;
-    await Message.findByIdAndUpdate(id, { seen: true });
+
+    const message = await Message.findByIdAndUpdate(
+      id,
+      { status: "seen" },
+      { returnDocument: "after" },
+    );
+
+    if (!message) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Message not found" });
+    }
+
+    const senderSocketId = userSocketMap[message.senderId.toString()];
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messageSeen", { messageId: id });
+    }
+
     res.status(200).json({ success: true });
   } catch (error) {
     console.error("markMessageAsSeen error:", error.message);
@@ -191,7 +112,6 @@ export const sendMessage = async (req, res) => {
     const receiverId = req.params.id;
     const senderId = req.user._id;
 
-    // Text aur image dono empty nahi hone chahiye
     if (!text && !image) {
       return res
         .status(400)
@@ -206,22 +126,93 @@ export const sendMessage = async (req, res) => {
       imageUrl = uploadResponse.secure_url;
     }
 
+    const receiverSocketId = userSocketMap[receiverId.toString()];
+    const initialStatus = receiverSocketId ? "delivered" : "sent";
+
     const newMessage = await Message.create({
       senderId,
       receiverId,
       text: text || "",
       image: imageUrl,
+      status: initialStatus,
     });
 
-    // Receiver online hai toh socket se real-time bhejo
-    const receiverSocketId = userSocketMap[receiverId];
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", newMessage);
+    }
+
+    if (initialStatus === "delivered") {
+      const senderSocketId = userSocketMap[senderId.toString()];
+      if (senderSocketId) {
+        io.to(senderSocketId).emit("messageDelivered", {
+          messageId: newMessage._id,
+        });
+      }
     }
 
     res.status(201).json({ success: true, newMessage });
   } catch (error) {
     console.error("sendMessage error:", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ──────────────────────────────────────────
+// DELETE MESSAGE
+// ──────────────────────────────────────────
+export const deleteMessage = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { deleteType } = req.body; // "forMe" | "forEveryone"
+    const userId = req.user._id;
+
+    const message = await Message.findById(id);
+
+    if (!message) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Message not found" });
+    }
+
+    if (deleteType === "forEveryone") {
+      // Sirf sender delete for everyone kar sakta hai
+      if (message.senderId.toString() !== userId.toString()) {
+        return res
+          .status(403)
+          .json({
+            success: false,
+            message: "Only sender can delete for everyone",
+          });
+      }
+
+      await Message.findByIdAndUpdate(id, { deletedForEveryone: true });
+
+      // Dono users ko notify karo
+      const receiverSocketId = userSocketMap[message.receiverId.toString()];
+      const senderSocketId = userSocketMap[message.senderId.toString()];
+
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit("messageDeleted", {
+          messageId: id,
+          deleteType: "forEveryone",
+        });
+      }
+      if (senderSocketId) {
+        io.to(senderSocketId).emit("messageDeleted", {
+          messageId: id,
+          deleteType: "forEveryone",
+        });
+      }
+    } else {
+      // Delete for me — sirf apne liye
+      await Message.findByIdAndUpdate(id, {
+        $addToSet: { deletedFor: userId },
+      });
+    }
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("deleteMessage error:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
 };
