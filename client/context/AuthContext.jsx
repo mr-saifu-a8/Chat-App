@@ -3,9 +3,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-// VITE_BACKEND_URL is configured at build time (in .env / Render/Vercel env vars).
-// If it is missing in a deployment, we fall back to a relative API path so the app can work
-// when backend is served from the same origin.
+
 const backendUrl = (import.meta.env.VITE_BACKEND_URL ?? "")
   .replace(/(^\"|\"$)/g, "")
   .trim();
