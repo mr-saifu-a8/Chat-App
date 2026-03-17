@@ -26,20 +26,34 @@
 //       enum: ["sent", "delivered", "seen"],
 //       default: "sent",
 //     },
-//     // Delete for me — array of userIds jinhone delete kiya
 //     deletedFor: [
 //       {
 //         type: mongoose.Schema.Types.ObjectId,
 //         ref: "User",
 //       },
 //     ],
-//     // Delete for everyone
 //     deletedForEveryone: {
 //       type: Boolean,
 //       default: false,
 //     },
+//     // Emoji reactions
+//     reactions: [
+//       {
+//         userId: {
+//           type: mongoose.Schema.Types.ObjectId,
+//           ref: "User",
+//           required: true,
+//         },
+//         emoji: {
+//           type: String,
+//           required: true,
+//         },
+//       },
+//     ],
+
 //   },
 //   { timestamps: true },
+
 // );
 
 // const Message = mongoose.model("Message", messageSchema);
@@ -83,7 +97,6 @@ const messageSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    // Emoji reactions
     reactions: [
       {
         userId: {
@@ -97,6 +110,11 @@ const messageSchema = new mongoose.Schema(
         },
       },
     ],
+    replyTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Message",
+      default: null,
+    },
   },
   { timestamps: true },
 );
