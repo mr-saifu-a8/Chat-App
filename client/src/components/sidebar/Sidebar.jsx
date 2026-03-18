@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect } from "react";
-import assets from "./../assets/assets";
+import assets from "../../assets/assets";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { ChatContext } from "../../context/ChatContext";
@@ -189,3 +189,85 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
+
+// import React, { useState, useContext, useEffect } from "react";
+// import { AuthContext } from "../../../context/AuthContext";
+// import { ChatContext } from "../../../context/ChatContext";
+// import SidebarHeader from "./SidebarHeader";
+// import UserListItem from "./UserListItem";
+
+// const Sidebar = () => {
+//   const {
+//     getUsers,
+//     users,
+//     selectedUser,
+//     setSelectedUser,
+//     unseenMessages,
+//     setUnseenMessages,
+//   } = useContext(ChatContext);
+//   const { logout, onlineUsers } = useContext(AuthContext);
+
+//   const [searchQuery, setSearchQuery] = useState("");
+
+//   const filteredUsers = searchQuery
+//     ? users.filter((user) =>
+//         user.fullName.toLowerCase().includes(searchQuery.toLowerCase()),
+//       )
+//     : users;
+
+//   useEffect(() => {
+//     getUsers();
+//   }, [onlineUsers]);
+
+//   return (
+//     <div className="flex flex-col w-full h-full bg-transparent text-white">
+//       <SidebarHeader
+//         searchQuery={searchQuery}
+//         onSearch={setSearchQuery}
+//         logout={logout}
+//       />
+
+//       <div className="shrink-0 px-5 pt-3 pb-2">
+//         <p className="text-[10px] font-semibold uppercase tracking-widest text-white/25">
+//           Messages
+//         </p>
+//       </div>
+
+//       <div className="flex-1 overflow-y-auto px-2 pb-4 space-y-0.5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+//         {filteredUsers.length > 0 ? (
+//           filteredUsers.map((user) => {
+//             const isActive =
+//               selectedUser?._id?.toString() === user._id?.toString();
+//             const isOnline = onlineUsers.some(
+//               (id) => id?.toString() === user._id?.toString(),
+//             );
+//             const unreadCount = unseenMessages[user._id?.toString()] || 0;
+
+//             return (
+//               <UserListItem
+//                 key={user._id}
+//                 user={user}
+//                 isActive={isActive}
+//                 isOnline={isOnline}
+//                 unreadCount={unreadCount}
+//                 onClick={() => {
+//                   setSelectedUser(user);
+//                   setUnseenMessages((prev) => ({
+//                     ...prev,
+//                     [user._id?.toString()]: 0,
+//                   }));
+//                 }}
+//               />
+//             );
+//           })
+//         ) : (
+//           <div className="py-12 text-center text-white/25 text-sm">
+//             No users found
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Sidebar;

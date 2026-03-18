@@ -1,13 +1,14 @@
-import React, { useState } from "react";
-import ChatContainer from "../components/ChatContainer";
-import Sidebar from "../components/Sidebar";
+import React, { useState, useContext } from "react";
+import ChatContainer from "../components/chat/ChatContainer";
+import Sidebar from "../components/sidebar/Sidebar";
 import RightSidebar from "../components/RightSidebar";
 import bgImage from "../assets/bgImage.svg";
-import { useContext } from "react";
-import { ChatContext } from "../../context/ChatContext";
+import { ChatContext } from "../context/ChatContext";
+import { AuthContext } from "../context/AuthContext";
 
 const HomePage = () => {
- const {selectedUser} = useContext(ChatContext)
+  const { selectedUser } = useContext(ChatContext);
+
   return (
     <div
       className="w-screen h-screen flex items-center justify-center"
@@ -17,7 +18,6 @@ const HomePage = () => {
         backgroundPosition: "center",
       }}
     >
-      {/* Outer shell — full screen on mobile, card on desktop */}
       <div
         className="
         w-full h-full
@@ -29,7 +29,7 @@ const HomePage = () => {
         shadow-[0_32px_80px_rgba(0,0,0,0.8)]
       "
       >
-        {/* SIDEBAR — always rendered, CSS controls visibility */}
+        {/* SIDEBAR */}
         <div
           className={`
           h-full shrink-0 border-r border-white/8
@@ -44,7 +44,7 @@ const HomePage = () => {
           <Sidebar />
         </div>
 
-        {/* CHAT CONTAINER — always rendered */}
+        {/* CHAT CONTAINER */}
         <div
           className={`
           flex-1 h-full min-w-0
@@ -55,7 +55,7 @@ const HomePage = () => {
           <ChatContainer />
         </div>
 
-        {/* RIGHT SIDEBAR — only when user selected, desktop only */}
+        {/* RIGHT SIDEBAR */}
         {selectedUser && (
           <div className="hidden lg:flex h-full w-[260px] xl:w-[300px] shrink-0 border-l border-white/8">
             <RightSidebar />

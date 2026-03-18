@@ -1,6 +1,7 @@
+
 import { useState, useEffect, useContext } from "react";
-import { ChatContext } from "../../context/ChatContext";
-import { AuthContext } from "../../context/AuthContext";
+import { ChatContext } from "../context/ChatContext";
+import { AuthContext } from "../context/AuthContext";
 import assets from "../assets/assets";
 
 const RightSidebar = () => {
@@ -10,7 +11,6 @@ const RightSidebar = () => {
   const [msgImages, setMsgImages] = useState([]);
   const [imgError, setImgError] = useState(false);
 
-  // Messages se images filter karo
   useEffect(() => {
     if (messages?.length > 0) {
       setMsgImages(messages.filter((msg) => msg.image).map((msg) => msg.image));
@@ -19,23 +19,19 @@ const RightSidebar = () => {
     }
   }, [messages]);
 
-  // selectedUser change hone pe imgError reset karo
   useEffect(() => {
     setImgError(false);
   }, [selectedUser]);
 
   if (!selectedUser) return null;
 
-  // toString() — ObjectId vs string mismatch fix
   const isOnline = onlineUsers.some(
     (id) => id?.toString() === selectedUser._id?.toString(),
   );
 
   return (
     <div className="flex flex-col w-full h-full bg-transparent text-white">
-      {/* Scrollable area */}
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-        {/* Profile */}
         <div className="pt-8 pb-6 px-5 flex flex-col items-center gap-3 text-center">
           <div className="relative">
             <img
@@ -46,7 +42,6 @@ const RightSidebar = () => {
               alt={selectedUser.fullName}
               className="w-20 h-20 rounded-full object-cover ring-4 ring-white/8 shadow-xl shadow-black/40"
             />
-            {/* Online dot — toString() se sahi check */}
             {isOnline && (
               <span className="absolute bottom-1 right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0d0b1e]" />
             )}
@@ -70,10 +65,8 @@ const RightSidebar = () => {
           )}
         </div>
 
-        {/* Divider */}
         <div className="mx-5 border-t border-white/8" />
 
-        {/* Media */}
         <div className="px-5 pt-5 pb-6">
           <div className="flex items-center justify-between mb-3">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-white/25">
@@ -123,7 +116,6 @@ const RightSidebar = () => {
         </div>
       </div>
 
-      {/* Logout */}
       <div className="shrink-0 px-5 py-4 border-t border-white/8">
         <button
           onClick={logout}

@@ -9,33 +9,26 @@ const MessageMenu = ({
   onSelect,
   onReply,
   onForward,
+  onRegisterOpen,
   children,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [copied, setCopied] = useState(false);
-
-  // Swipe state
   const [swipeX, setSwipeX] = useState(0);
   const [isSwiping, setIsSwiping] = useState(false);
-  const swipeTriggered = useRef(false);
 
   const menuRef = useRef(null);
-  const wrapperRef = useRef(null);
-  const dotBtnRef = useRef(null);
   const touchRef = useRef(null);
-
-  // Long press state
   const longPressTimer = useRef(null);
   const longPressTriggered = useRef(false);
+  const swipeTriggered = useRef(false);
   const touchStartPos = useRef({ x: 0, y: 0 });
-  const touchStartTime = useRef(0);
+  const isMoving = useRef(false);
 
-  const SWIPE_THRESHOLD = 60; // kitna swipe karo reply trigger ke liye
-  const SWIPE_MAX = 80; // max kitna swipe ho sakta hai
-  const LONG_PRESS_DURATION = 500;
+  const SWIPE_THRESHOLD = 55;
+  const SWIPE_MAX = 75;
 
-  // ── Menu position ──
   const openMenu = useCallback(
     (clientX, clientY) => {
       const menuWidth = 220;
@@ -46,13 +39,11 @@ const MessageMenu = ({
       let left = isMine ? clientX - menuWidth : clientX;
 
       if (top < padding) top = clientY + padding;
-      if (top + menuHeight > window.innerHeight - padding) {
+      if (top + menuHeight > window.innerHeight - padding)
         top = window.innerHeight - menuHeight - padding;
-      }
       if (left < padding) left = padding;
-      if (left + menuWidth > window.innerWidth - padding) {
+      if (left + menuWidth > window.innerWidth - padding)
         left = window.innerWidth - menuWidth - padding;
-      }
 
       setPosition({ top, left });
       setMenuOpen(true);
@@ -60,32 +51,22 @@ const MessageMenu = ({
     [isMine],
   );
 
-  // ── Outside click close ──
   useEffect(() => {
-    if (!menuOpen) return;
-    const handler = (e) => {
-      if (
-        menuRef.current?.contains(e.target) ||
-        dotBtnRef.current?.contains(e.target)
-      )
-        return;
-      setMenuOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("touchstart", handler, { passive: true });
-    return () => {
-      document.removeEventListener("mousedown", handler);
-      document.removeEventListener("touchstart", handler);
-    };
-  }, [menuOpen]);
+    onRegisterOpen?.(openMenu);
+  }, [openMenu, onRegisterOpen]);
 
   useEffect(() => {
     if (!menuOpen) return;
     const handler = (e) => {
-      if (e.key === "Escape") setMenuOpen(false);
+      if (menuRef.current?.contains(e.target)) return;
+      setMenuOpen(false);
     };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchend", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchend", handler);
+    };
   }, [menuOpen]);
 
   // ── Touch handlers ──
@@ -93,18 +74,19 @@ const MessageMenu = ({
     (e) => {
       const touch = e.touches[0];
       touchStartPos.current = { x: touch.clientX, y: touch.clientY };
-      touchStartTime.current = Date.now();
+      isMoving.current = false;
       longPressTriggered.current = false;
       swipeTriggered.current = false;
       setIsSwiping(false);
       setSwipeX(0);
 
-      // Long press timer shuru karo
       longPressTimer.current = setTimeout(() => {
-        longPressTriggered.current = true;
-        if (navigator.vibrate) navigator.vibrate(40);
-        openMenu(touch.clientX, touch.clientY);
-      }, LONG_PRESS_DURATION);
+        if (!isMoving.current) {
+          longPressTriggered.current = true;
+          if (navigator.vibrate) navigator.vibrate(50);
+          openMenu(touch.clientX, touch.clientY);
+        }
+      }, 500);
     },
     [openMenu],
   );
@@ -114,44 +96,39 @@ const MessageMenu = ({
       const touch = e.touches[0];
       const dx = touch.clientX - touchStartPos.current.x;
       const dy = Math.abs(touch.clientY - touchStartPos.current.y);
+      const absDx = Math.abs(dx);
 
-      // Vertical scroll ho raha hai — long press cancel, swipe nahi
-      if (dy > 15) {
+      if (dy > 10) {
         clearTimeout(longPressTimer.current);
+        isMoving.current = true;
+        setSwipeX(0);
+        setIsSwiping(false);
         return;
       }
 
-      // Horizontal swipe detect karo
-      const isRightSwipe = !isMine && dx > 0; // dusre ka message — right swipe
-      const isLeftSwipe = isMine && dx < 0; // mera message — left swipe
-
-      if (isRightSwipe || isLeftSwipe) {
-        // Long press cancel karo kyunki swipe ho raha hai
+      if (absDx > 5) {
         clearTimeout(longPressTimer.current);
-        setIsSwiping(true);
+        isMoving.current = true;
+      }
 
-        // Swipe amount clamp karo
-        const absDx = Math.abs(dx);
-        const clampedX = Math.min(absDx, SWIPE_MAX);
+      const validSwipe = (!isMine && dx > 0) || (isMine && dx < 0);
+      if (!validSwipe) return;
 
-        // Resistance add karo — threshold ke baad slow ho
-        const resistedX =
-          clampedX < SWIPE_THRESHOLD
-            ? clampedX
-            : SWIPE_THRESHOLD + (clampedX - SWIPE_THRESHOLD) * 0.3;
+      setIsSwiping(true);
+      const resistedX =
+        absDx < SWIPE_THRESHOLD
+          ? absDx
+          : SWIPE_THRESHOLD + (absDx - SWIPE_THRESHOLD) * 0.3;
 
-        setSwipeX(isMine ? -resistedX : resistedX);
+      setSwipeX(
+        isMine
+          ? -Math.min(resistedX, SWIPE_MAX)
+          : Math.min(resistedX, SWIPE_MAX),
+      );
 
-        // Threshold cross kiya — reply trigger hoga release pe
-        if (absDx >= SWIPE_THRESHOLD && !swipeTriggered.current) {
-          swipeTriggered.current = true;
-          if (navigator.vibrate) navigator.vibrate(30);
-        }
-      } else {
-        // Horizontal move but wrong direction — long press cancel
-        if (Math.abs(dx) > 10) {
-          clearTimeout(longPressTimer.current);
-        }
+      if (absDx >= SWIPE_THRESHOLD && !swipeTriggered.current) {
+        swipeTriggered.current = true;
+        if (navigator.vibrate) navigator.vibrate(30);
       }
     },
     [isMine],
@@ -163,50 +140,38 @@ const MessageMenu = ({
 
       if (longPressTriggered.current) {
         e.preventDefault();
-        e.stopPropagation();
         longPressTriggered.current = false;
-      }
-
-      // Swipe complete — reply trigger karo
-      if (swipeTriggered.current && isSwiping) {
+      } else if (swipeTriggered.current && isSwiping) {
         onReply?.(message);
+        setTimeout(() => {
+          document.querySelector('input[placeholder="Message..."]')?.focus();
+        }, 150);
       }
 
-      // Swipe reset — smooth animation ke saath
       setSwipeX(0);
       setIsSwiping(false);
       swipeTriggered.current = false;
+      isMoving.current = false;
     },
     [isSwiping, message, onReply],
   );
 
-  // ── Manual event listeners ──
+  // ── Manual listeners — passive fix ──
   useEffect(() => {
     const el = touchRef.current;
     if (!el) return;
 
     el.addEventListener("touchstart", handleTouchStart, { passive: true });
-    el.addEventListener("touchend", handleTouchEnd, { passive: false });
     el.addEventListener("touchmove", handleTouchMove, { passive: true });
+    el.addEventListener("touchend", handleTouchEnd, { passive: false });
 
     return () => {
       el.removeEventListener("touchstart", handleTouchStart);
-      el.removeEventListener("touchend", handleTouchEnd);
       el.removeEventListener("touchmove", handleTouchMove);
+      el.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [handleTouchStart, handleTouchEnd, handleTouchMove]);
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
-  // ── Desktop dot button ──
-  const handleDotClick = useCallback(
-    (e) => {
-      e.stopPropagation();
-      const rect = dotBtnRef.current?.getBoundingClientRect();
-      if (rect) openMenu(rect.left, rect.bottom);
-    },
-    [openMenu],
-  );
-
-  // ── Copy ──
   const handleCopy = async () => {
     if (!message?.text) return;
     try {
@@ -224,6 +189,12 @@ const MessageMenu = ({
     setMenuOpen(false);
   };
 
+  const focusInput = () => {
+    setTimeout(() => {
+      document.querySelector('input[placeholder="Message..."]')?.focus();
+    }, 150);
+  };
+
   const menuItems = [
     {
       icon: <Reply className="w-4 h-4 shrink-0" />,
@@ -233,6 +204,7 @@ const MessageMenu = ({
       onClick: () => {
         onReply?.(message);
         setMenuOpen(false);
+        focusInput();
       },
       show: true,
     },
@@ -291,32 +263,26 @@ const MessageMenu = ({
     },
   ].filter((item) => item.show);
 
-  // Swipe progress — reply icon opacity ke liye
   const swipeProgress = Math.min(Math.abs(swipeX) / SWIPE_THRESHOLD, 1);
-  const replyTriggered = swipeTriggered.current;
 
   return (
     <>
-      <div ref={wrapperRef} className="relative w-full overflow-hidden">
-        {/* ── Reply icon — swipe pe reveal hota hai ── */}
+      <div className="relative w-full">
+        {/* Reply icon — swipe pe reveal */}
         <div
-          className={`
-            absolute top-1/2 -translate-y-1/2 z-0
-            flex items-center justify-center
-            w-8 h-8 rounded-full
-            transition-all duration-150
-            ${isMine ? "right-1" : "left-1"}
-          `}
+          className={`absolute top-1/2 z-0 pointer-events-none
+            flex items-center justify-center w-8 h-8
+            ${isMine ? "right-1" : "left-1"}`}
           style={{
             opacity: swipeProgress,
-            transform: `translateY(-50%) scale(${0.6 + swipeProgress * 0.4})`,
-            color: replyTriggered ? "#a78bfa" : "rgba(255,255,255,0.5)",
+            transform: `translateY(-50%) scale(${0.5 + swipeProgress * 0.5})`,
+            color: swipeTriggered.current ? "#a78bfa" : "rgba(255,255,255,0.5)",
           }}
         >
           <Reply className="w-5 h-5" />
         </div>
 
-        {/* ── Message — swipe transform ── */}
+        {/* Message — touch events yahan attach hote hain */}
         <div
           ref={touchRef}
           className="relative z-10 w-full"
@@ -324,7 +290,7 @@ const MessageMenu = ({
             transform: `translateX(${swipeX}px)`,
             transition: isSwiping
               ? "none"
-              : "transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              : "transform 0.35s cubic-bezier(0.34,1.56,0.64,1)",
             WebkitUserSelect: "none",
             userSelect: "none",
             WebkitTouchCallout: "none",
@@ -332,37 +298,8 @@ const MessageMenu = ({
         >
           {children}
         </div>
-
-        {/* ── Desktop dot button ── */}
-        <button
-          ref={dotBtnRef}
-          onClick={handleDotClick}
-          aria-label="Message options"
-          className={`
-            absolute top-1
-            ${isMine ? "-left-7" : "-right-7"}
-            w-6 h-6 rounded-lg z-20
-            items-center justify-center
-            opacity-0 group-hover:opacity-100
-            hover:bg-white/10 active:scale-90
-            transition-all duration-150
-            md:flex hidden
-            ${menuOpen ? "!opacity-100 bg-white/10" : ""}
-          `}
-        >
-          <svg
-            className="w-3 h-3 text-white/50"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-          >
-            <circle cx="10" cy="4" r="1.5" />
-            <circle cx="10" cy="10" r="1.5" />
-            <circle cx="10" cy="16" r="1.5" />
-          </svg>
-        </button>
       </div>
 
-      {/* ── Dropdown menu ── */}
       {menuOpen && (
         <>
           <div
@@ -372,13 +309,11 @@ const MessageMenu = ({
           <div
             ref={menuRef}
             style={{ top: position.top, left: position.left }}
-            className="
-              fixed z-[1000] w-[220px]
+            className="fixed z-[1000] w-[220px]
               bg-[#13102a]/97 backdrop-blur-2xl
               border border-white/[0.08]
               rounded-2xl overflow-hidden
-              shadow-[0_20px_60px_rgba(0,0,0,0.8)]
-            "
+              shadow-[0_20px_60px_rgba(0,0,0,0.8)]"
           >
             {menuItems.map((item, index) => (
               <div key={index}>
@@ -387,11 +322,8 @@ const MessageMenu = ({
                 )}
                 <button
                   onClick={item.onClick}
-                  className={`
-                    w-full flex items-center gap-3 px-4 py-3
-                    transition-colors duration-150 text-left
-                    ${item.color}
-                  `}
+                  className={`w-full flex items-center gap-3 px-4 py-3
+                    transition-colors duration-150 text-left ${item.color}`}
                 >
                   {item.icon}
                   <div className="min-w-0">
