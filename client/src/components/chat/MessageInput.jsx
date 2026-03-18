@@ -168,28 +168,25 @@ const MessageInput = ({ replyTo, onReplyCancel, typingTimeoutRef }) => {
       }
     }, 1500);
   };
+const handleSend = async (e) => {
+  e?.preventDefault();
+  if (input.trim() === "" && !previewImage) return;
+  if (socket && selectedUser?._id) {
+    socket.emit("stopTyping", { receiverId: selectedUser._id });
+  }
+  if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
-  const handleSend = async (e) => {
-    e?.preventDefault();
-    if (input.trim() === "" && !previewImage) return;
-    if (socket && selectedUser?._id) {
-      socket.emit("stopTyping", { receiverId: selectedUser._id });
-    }
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+  await sendMessage({
+    text: input.trim(),
+    replyTo: replyTo?._id?.toString() || null,
+  });
 
-    await sendMessage({
-      text: input.trim(),
-      replyTo: replyTo?._id?.toString() || null,
-    });
+  setInput("");
+  onReplyCancel?.();
 
-    setInput("");
-    onReplyCancel?.();
-
-    // Send ke baad focus maintain karo
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 50);
-  };
+  // Focus immediately — no delay
+  inputRef.current?.focus();
+};
 
   const handleSendImage = async (e) => {
     const file = e.target.files[0];
@@ -265,6 +262,14 @@ const MessageInput = ({ replyTo, onReplyCancel, typingTimeoutRef }) => {
               e.key === "Enter" && !e.shiftKey ? handleSend(e) : null
             }
             placeholder="Message..."
+            autoComplete="off"
+            autoCorrect="off"
+            // Mobile pe keyboard band hone se rokta hai
+            onBlur={(e) => {
+              // Sirf tab blur allow karo jab koi aur element focus le
+              // File input ya send button pe click se focus na jaaye
+              e.preventDefault();
+            }}
             className="flex-1 bg-transparent outline-none text-white text-sm placeholder-white/20 min-w-0"
           />
         </div>
