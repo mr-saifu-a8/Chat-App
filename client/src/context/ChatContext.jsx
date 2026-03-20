@@ -297,7 +297,7 @@ export const ChatProvider = ({ children }) => {
   // ──────────────────────────────────────────
   // SEND MESSAGE
   // ──────────────────────────────────────────
-  const sendMessage = async (messageData) => {
+  const sendMessage = async (messageData, onSent) => {
     if (!selectedUser?._id) return;
     try {
       const { data } = await axios.post(
@@ -306,15 +306,11 @@ export const ChatProvider = ({ children }) => {
       );
       if (data.success) {
         setMessages((prev) => [...prev, data.newMessage]);
+        onSent?.(); // ← callback — message add hone ke baad scroll
       } else {
         toast.error(data.message);
       }
     } catch (error) {
-      // Yeh add karo — exact error dekhne ke liye
-      console.log("Error response:", error.response?.data);
-      console.log("Message data keys:", Object.keys(messageData));
-      console.log("Has audio:", !!messageData.audio);
-      console.log("Audio length:", messageData.audio?.length);
       toast.error(error.response?.data?.message || error.message);
     }
   };
