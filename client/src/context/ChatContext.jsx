@@ -299,6 +299,12 @@ export const ChatProvider = ({ children }) => {
   // ──────────────────────────────────────────
   const sendMessage = async (messageData, onSent) => {
     if (!selectedUser?._id) return;
+    console.log("ChatContext sendMessage called with:", {
+      text: !!messageData.text,
+      image: !!messageData.image,
+      audio: !!messageData.audio,
+      audioDuration: messageData.audioDuration,
+    });
     try {
       const { data } = await axios.post(
         `/api/messages/send/${selectedUser._id}`,
@@ -311,6 +317,10 @@ export const ChatProvider = ({ children }) => {
         toast.error(data.message);
       }
     } catch (error) {
+      console.error(
+        "ChatContext sendMessage error:",
+        error.response?.data || error.message,
+      );
       toast.error(error.response?.data?.message || error.message);
     }
   };

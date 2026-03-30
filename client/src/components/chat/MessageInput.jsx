@@ -4,6 +4,7 @@ import assets from "../../assets/assets";
 import { AuthContext } from "../../context/AuthContext";
 import { ChatContext } from "../../context/ChatContext";
 import toast from "react-hot-toast";
+import VoiceRecorder from "./VoiceRecorder";
 
 const MessageInput = ({
   replyTo,
@@ -63,10 +64,24 @@ const MessageInput = ({
   };
 
   const handleSendVoice = ({ audio, audioDuration }) => {
+    console.log("Sending voice message:", {
+      audio: !!audio,
+      audioDuration,
+      audioLength: audio?.length,
+    });
+    if (!audio || audio.length < 100) {
+      // Basic validation
+      console.error("Invalid audio data");
+      toast.error("Failed to record audio");
+      setIsRecording(false);
+      return;
+    }
     const reply = replyTo?._id?.toString() || null;
     setIsRecording(false);
     onReplyCancel?.();
-    sendMessage({ audio, audioDuration, replyTo: reply }).catch(() => {});
+    sendMessage({ audio, audioDuration, replyTo: reply }).catch((error) => {
+      console.error("Send voice message error:", error);
+    });
 
     setTimeout(() => {
       onMessageSent?.();
@@ -194,4 +209,3 @@ const MessageInput = ({
 };
 
 export default MessageInput;
-

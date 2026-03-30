@@ -50,7 +50,7 @@ export const getMessage = async (req, res) => {
       deletedForEveryone: false,
       deletedFor: { $ne: myId },
     })
-      .populate("replyTo", "text image senderId") // replyTo populate karo
+      .populate("replyTo", "text image audio senderId") // replyTo populate karo
       .sort({ createdAt: 1 });
 
     // Messages seen mark karo
@@ -112,11 +112,18 @@ export const markMessageAsSeen = async (req, res) => {
 // ──────────────────────────────────────────
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image, replyTo } = req.body; // replyTo add kiya
+    const { text, image, audio, audioDuration, replyTo } = req.body; // audio and audioDuration added
     const receiverId = req.params.id;
     const senderId = req.user._id;
 
-    if (!text && !image) {
+    console.log("Received message data:", {
+      text: !!text,
+      image: !!image,
+      audio: !!audio,
+      audioDuration,
+    });
+
+    if (!text && !image && !audio) {
       return res
         .status(400)
         .json({ success: false, message: "Message cannot be empty" });
@@ -130,6 +137,22 @@ export const sendMessage = async (req, res) => {
       imageUrl = uploadResponse.secure_url;
     }
 
+    let audioUrl = "";
+    if (audio) {
+      try {
+        const uploadResponse = await cloudinary.uploader.upload(audio, {
+          folder: "chat-app/messages/audio",
+          resource_type: "auto", // Let Cloudinary detect the type
+        });
+        audioUrl = uploadResponse.secure_url;
+      } catch (uploadError) {
+        console.error("Audio upload error:", uploadError);
+        return res
+          .status(500)
+          .json({ success: false, message: "Failed to upload audio" });
+      }
+    }
+
     const receiverSocketId = userSocketMap[receiverId.toString()];
     const initialStatus = receiverSocketId ? "delivered" : "sent";
 
@@ -138,6 +161,8 @@ export const sendMessage = async (req, res) => {
       receiverId,
       text: text || "",
       image: imageUrl,
+      audio: audioUrl,
+      audioDuration: audioDuration || 0,
       status: initialStatus,
       replyTo: replyTo || null, // replyTo save karo
     });
@@ -145,7 +170,7 @@ export const sendMessage = async (req, res) => {
     // replyTo populate karke bhejo taaki frontend pe show ho
     const populatedMessage = await Message.findById(newMessage._id).populate(
       "replyTo",
-      "text image senderId",
+      "text image audio senderId",
     );
 
     if (receiverSocketId) {

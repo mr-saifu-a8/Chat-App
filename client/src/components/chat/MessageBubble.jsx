@@ -167,6 +167,13 @@ const MessageBubble = ({
                           />
                           <p className="text-[11px] text-white/45">📷 Photo</p>
                         </div>
+                      ) : msg.replyTo.audio ? (
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-8 h-8 rounded-md bg-white/10 flex items-center justify-center shrink-0">
+                            <span className="text-xs">🎵</span>
+                          </div>
+                          <p className="text-[11px] text-white/45">🎵 Audio</p>
+                        </div>
                       ) : (
                         <p className="text-[11px] text-white/45 truncate leading-tight">
                           {msg.replyTo.text}
@@ -191,6 +198,44 @@ const MessageBubble = ({
                     window.open(msg.image);
                   }}
                 />
+              ) : msg.audio ? (
+                <div
+                  className={`
+                  px-3.5 py-2 flex items-center gap-3 rounded-2xl border
+                  ${
+                    isSelected
+                      ? isMine
+                        ? "bg-violet-500/90 border-violet-400/50"
+                        : "bg-violet-500/30 border-violet-400/50"
+                      : isMine
+                        ? `bg-violet-600/80 border-violet-600/50
+                       ${msg.replyTo ? "rounded-b-2xl rounded-tl-2xl rounded-tr-sm" : isFirst ? "rounded-t-2xl" : "rounded-t-lg"}
+                       ${!msg.replyTo && isLast ? "rounded-bl-2xl rounded-br-sm" : ""}
+                       ${!msg.replyTo && !isLast ? "rounded-b-lg" : ""}`
+                        : `bg-white/[0.09] border-white/10
+                       ${msg.replyTo ? "rounded-b-2xl rounded-tr-2xl rounded-tl-sm" : isFirst ? "rounded-t-2xl" : "rounded-t-lg"}
+                       ${!msg.replyTo && isLast ? "rounded-br-2xl rounded-bl-sm" : ""}
+                       ${!msg.replyTo && !isLast ? "rounded-b-lg" : ""}`
+                  }
+                `}
+                >
+                  <audio
+                    controls
+                    className="max-w-full h-8"
+                    style={{ filter: "invert(1)" }}
+                  >
+                    <source src={msg.audio} type="audio/webm" />
+                    <source src={msg.audio} type="audio/mp4" />
+                    <source src={msg.audio} type="audio/mpeg" />
+                    Your browser does not support the audio element.
+                  </audio>
+                  {msg.audioDuration && (
+                    <span className="text-xs text-white/60 ml-2">
+                      {Math.floor(msg.audioDuration / 60)}:
+                      {(msg.audioDuration % 60).toString().padStart(2, "0")}
+                    </span>
+                  )}
+                </div>
               ) : (
                 <div
                   className={`

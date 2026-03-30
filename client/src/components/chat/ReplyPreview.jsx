@@ -36,6 +36,13 @@ const ReplyPreview = ({ replyTo, onCancel }) => {
               />
               <p className="text-xs text-white/40">📷 Photo</p>
             </div>
+          ) : replyTo.audio ? (
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-md bg-white/10 flex items-center justify-center shrink-0">
+                <span className="text-xs">🎵</span>
+              </div>
+              <p className="text-xs text-white/40">🎵 Audio</p>
+            </div>
           ) : (
             <p className="text-xs text-white/40 truncate">{replyTo.text}</p>
           )}
