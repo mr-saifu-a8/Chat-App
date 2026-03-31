@@ -350,20 +350,22 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap');
 
+        /* ── Base (mobile-first) ── */
         .vr-root {
           font-family: 'DM Sans', sans-serif;
           display: flex;
           align-items: center;
-          gap: 16px;
+          gap: 10px;
+          width: 100%;
+          box-sizing: border-box;
           background: linear-gradient(135deg, #0f0f14 0%, #1a1a24 100%);
           border: 1px solid rgba(255,255,255,0.07);
-          border-radius: 20px;
-          padding: 14px 18px;
+          border-radius: 18px;
+          padding: 11px 13px;
           box-shadow:
             0 0 0 1px rgba(239,68,68,0.15),
             0 8px 32px rgba(0,0,0,0.45),
             inset 0 1px 0 rgba(255,255,255,0.05);
-          min-width: 360px;
           position: relative;
           overflow: hidden;
         }
@@ -377,6 +379,7 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
           pointer-events: none;
         }
 
+        /* Pulse dot */
         .vr-pulse-dot {
           width: 8px;
           height: 8px;
@@ -393,54 +396,66 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
           100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
         }
 
+        /* REC label — hidden on xs, shown on sm+ */
         .vr-label {
+          display: none;
           font-size: 11px;
           font-weight: 600;
           letter-spacing: 0.12em;
           text-transform: uppercase;
           color: #ef4444;
           opacity: 0.9;
+          flex-shrink: 0;
         }
 
+        /* Timer */
         .vr-timer {
           font-family: 'DM Mono', monospace;
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 500;
           color: #f5f5f5;
           letter-spacing: 0.04em;
-          min-width: 36px;
+          min-width: 34px;
           text-align: center;
+          flex-shrink: 0;
         }
 
+        /* Waveform — fills remaining space, clips gracefully */
         .vr-waveform {
           display: flex;
           align-items: center;
-          gap: 2.5px;
-          height: 36px;
+          gap: 2px;
+          height: 34px;
           flex: 1;
+          min-width: 0;
+          overflow: hidden;
         }
 
         .vr-bar {
           width: 3px;
+          min-width: 3px;
           border-radius: 2px;
           background: linear-gradient(to top, rgba(239,68,68,0.9), rgba(251,113,133,0.6));
           transition: height 0.07s ease;
           flex-shrink: 0;
         }
 
+        /* Divider */
         .vr-divider {
           width: 1px;
-          height: 28px;
+          height: 26px;
           background: rgba(255,255,255,0.08);
           flex-shrink: 0;
         }
 
+        /* Buttons — icon-only on mobile */
         .vr-btn {
           display: flex;
           align-items: center;
-          gap: 7px;
-          padding: 9px 16px;
-          border-radius: 12px;
+          justify-content: center;
+          gap: 0;
+          padding: 9px;
+          border-radius: 11px;
           font-family: 'DM Sans', sans-serif;
           font-size: 13px;
           font-weight: 600;
@@ -449,6 +464,13 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
           transition: all 0.18s ease;
           flex-shrink: 0;
           letter-spacing: 0.01em;
+          /* Minimum tap target */
+          min-width: 38px;
+          min-height: 38px;
+        }
+
+        .vr-btn-text {
+          display: none;
         }
 
         .vr-btn-cancel {
@@ -460,6 +482,9 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
           background: rgba(255,255,255,0.1);
           color: rgba(255,255,255,0.8);
           border-color: rgba(255,255,255,0.15);
+        }
+        .vr-btn-cancel:active {
+          background: rgba(255,255,255,0.14);
         }
 
         .vr-btn-send {
@@ -474,17 +499,39 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
           transform: translateY(-1px);
         }
         .vr-btn-send:active {
-          transform: translateY(0px);
+          transform: translateY(0);
+          box-shadow: 0 2px 8px rgba(239,68,68,0.3);
+        }
+
+        /* ── Small phones and up (≥360px) ── */
+        @media (min-width: 360px) {
+          .vr-root { gap: 11px; padding: 12px 14px; }
+        }
+
+        /* ── Tablets / large phones landscape (≥520px) ── */
+        @media (min-width: 520px) {
+          .vr-root { gap: 14px; padding: 13px 16px; border-radius: 20px; }
+          .vr-label { display: inline; }
+          .vr-timer { font-size: 15px; }
+          .vr-waveform { gap: 2.5px; height: 36px; }
+          .vr-btn { gap: 7px; padding: 9px 15px; }
+          .vr-btn-text { display: inline; }
+        }
+
+        /* ── Desktop (≥768px) ── */
+        @media (min-width: 768px) {
+          .vr-root { gap: 16px; padding: 14px 18px; }
+          .vr-btn { padding: 9px 16px; }
         }
       `}</style>
 
       <div className="vr-root">
-        {/* Left: pulse dot + label */}
+        {/* Pulse dot + REC label */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 8,
+            gap: 7,
             flexShrink: 0,
           }}
         >
@@ -495,7 +542,7 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
         {/* Timer */}
         <span className="vr-timer">{formatDuration(duration)}</span>
 
-        {/* Waveform */}
+        {/* Waveform — bars render but overflow is hidden on small screens */}
         <div className="vr-waveform">
           {barHeights.map((h, i) => (
             <div key={i} className="vr-bar" style={{ height: `${h}px` }} />
@@ -504,15 +551,16 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
 
         <div className="vr-divider" />
 
-        {/* Buttons */}
+        {/* Cancel — icon on mobile, icon+text on ≥520px */}
         <button className="vr-btn vr-btn-cancel" onClick={handleCancel}>
-          <X size={13} strokeWidth={2.5} />
-          Cancel
+          <X size={14} strokeWidth={2.5} />
+          <span className="vr-btn-text">Cancel</span>
         </button>
 
+        {/* Send — icon on mobile, icon+text on ≥520px */}
         <button className="vr-btn vr-btn-send" onClick={handleSend}>
-          <Send size={13} strokeWidth={2.5} />
-          Send
+          <Send size={14} strokeWidth={2.5} />
+          <span className="vr-btn-text">Send</span>
         </button>
       </div>
     </>
