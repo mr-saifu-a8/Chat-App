@@ -1,23 +1,16 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Mic, Square, Send, X } from "lucide-react";
 
 const VoiceRecorder = ({ onSend, onCancel }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
-  const [audioBlob, setAudioBlob] = useState(null);
+  const [isStoppingForSend, setIsStoppingForSend] = useState(false);
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
 
-  useEffect(() => {
-    startRecording();
-    return () => {
-      stopRecording();
-    };
-  }, []);
-
-  const startRecording = async () => {
+  const startRecording = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -46,8 +39,33 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
         const blob = new Blob(chunksRef.current, {
           type: selectedMimeType || "audio/webm",
         });
-        setAudioBlob(blob);
         chunksRef.current = [];
+        if (isStoppingForSend) {
+          setIsStoppingForSend(false);
+          if (blob && blob.size > 0) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const audioData = reader.result;
+              console.log(
+                "Audio data prepared:",
+                !!audioData,
+                audioData?.substring(0, 50),
+              );
+              onSend({
+                audio: audioData,
+                audioDuration: duration,
+              });
+            };
+            reader.onerror = () => {
+              console.error("FileReader error");
+              onCancel();
+            };
+            reader.readAsDataURL(blob);
+          } else {
+            console.error("No audio data available", blob);
+            onCancel();
+          }
+        }
       };
 
       mediaRecorderRef.current.start();
@@ -61,9 +79,9 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
       console.error("Error starting recording:", error);
       onCancel();
     }
-  };
+  }, [onCancel]);
 
-  const stopRecording = () => {
+  const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
     }
@@ -74,43 +92,24 @@ const VoiceRecorder = ({ onSend, onCancel }) => {
       clearInterval(timerRef.current);
     }
     setIsRecording(false);
-  };
+  }, []);
 
   const handleSend = () => {
+    setIsStoppingForSend(true);
     stopRecording();
-    // Wait a bit for the blob to be set
-    setTimeout(() => {
-      if (audioBlob && audioBlob.size > 0) {
-        // Convert blob to base64 for sending
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const audioData = reader.result;
-          console.log(
-            "Audio data prepared:",
-            !!audioData,
-            audioData?.substring(0, 50),
-          );
-          onSend({
-            audio: audioData,
-            audioDuration: duration,
-          });
-        };
-        reader.onerror = () => {
-          console.error("FileReader error");
-          onCancel();
-        };
-        reader.readAsDataURL(audioBlob);
-      } else {
-        console.error("No audio data available", audioBlob);
-        onCancel();
-      }
-    }, 100);
   };
 
   const handleCancel = () => {
     stopRecording();
     onCancel();
   };
+
+  useEffect(() => {
+    startRecording();
+    return () => {
+      stopRecording();
+    };
+  }, [startRecording, stopRecording]);
 
   const formatDuration = (seconds) => {
     const mins = Math.floor(seconds / 60);
