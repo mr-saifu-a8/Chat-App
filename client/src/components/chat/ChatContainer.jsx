@@ -32,10 +32,13 @@ const ChatContainer = () => {
     setSelectedIds(new Set());
   }, [selectedUser]);
 
-  // Scroll to bottom — sirf message send pe call hoga
-  const handleScrollToBottom = useCallback(() => {
+  
+const handleScrollToBottom = useCallback(() => {
+  // 150ms delay — message render hone do pehle
+  setTimeout(() => {
     messageListRef.current?.scrollToBottom();
-  }, []);
+  }, 150);
+}, []);
 
   const handleSelect = useCallback(
     (msgId, startSelecting = false) => {
