@@ -1,7 +1,14 @@
 import React from "react";
-import { Trash2, X } from "lucide-react";
+import { Trash2, X, CheckSquare, Square } from "lucide-react";
 
-const SelectionBar = ({ selectedCount, onDelete, onCancel }) => {
+const SelectionBar = ({
+  selectedCount,
+  totalCount,
+  allSelected,
+  onSelectAll,
+  onDelete,
+  onCancel,
+}) => {
   return (
     <div
       className="
@@ -18,14 +25,26 @@ const SelectionBar = ({ selectedCount, onDelete, onCancel }) => {
         <X className="w-5 h-5 text-white/70" />
       </button>
 
+      {/* Select All checkbox */}
+      <button
+        onClick={onSelectAll}
+        className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+      >
+        {allSelected ? (
+          <CheckSquare className="w-5 h-5 text-violet-400" />
+        ) : (
+          <Square className="w-5 h-5 text-white/40" />
+        )}
+      </button>
+
       {/* Count */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-white">
-          {selectedCount} selected
+          {selectedCount} / {totalCount} selected
         </p>
       </div>
 
-      {/* Delete button */}
+      {/* Delete */}
       <button
         onClick={onDelete}
         disabled={selectedCount === 0}
